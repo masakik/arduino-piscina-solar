@@ -12,7 +12,7 @@ de aquecer a piscina de casa.
 
 ## Comunicacao WEB
 * setar parametros / ler parametros
-* ler dados :  temperatura t1/t2, tempo acumulado ligado diario, alarme de congelamento das placas, 
+* ler dados :  temperatura t1, temperatura t2, estado da bomba, tempo acumulado ligado diario, alarme de congelamento das placas, 
 
 ## Parâmetros configuráveis
 [F02]– Diferencial (T1-T2) para ligar a bomba:
