@@ -9,6 +9,10 @@ de aquecer a piscina de casa.
 * DS18B20
 * Módulo RTC
 * Módulo de relê
+* fonte
+* caixa
+* leds de sinalizacao
+
 
 ## Comunicacao WEB
 * setar parametros / ler parametros / configuracao padrao
