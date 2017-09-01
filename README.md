@@ -16,7 +16,7 @@ de aquecer a piscina de casa.
 
 ## Parâmetros configuráveis
 
-codigo do sensor 1
+codigo do sensor 1: sera atribuido automaticamente em uma ordem. Se estiver errado é só inverter.
 
 codigo do sensor 2 
 
