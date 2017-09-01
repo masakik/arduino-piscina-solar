@@ -10,6 +10,10 @@ de aquecer a piscina de casa.
 * Módulo RTC
 * Módulo de relê
 
+## Comunicacao WEB
+* setar parametros / ler parametros
+* ler dados :  temperatura t1/t2, tempo acumulado ligado diario, alarme de congelamento das placas, 
+
 ## Parâmetros configuráveis
 [F02]– Diferencial (T1-T2) para ligar a bomba:
 Permite configurar a diferença de temperatura entre o coletor solar e a piscina para acionar a
