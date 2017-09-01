@@ -11,10 +11,15 @@ de aquecer a piscina de casa.
 * Módulo de relê
 
 ## Comunicacao WEB
-* setar parametros / ler parametros
+* setar parametros / ler parametros / configuracao padrao
 * ler dados :  temperatura t1, temperatura t2, estado da bomba, tempo acumulado ligado diario, alarme de congelamento das placas, 
 
 ## Parâmetros configuráveis
+
+codigo do sensor 1
+
+codigo do sensor 2 
+
 [F02]– Diferencial (T1-T2) para ligar a bomba:
 Permite configurar a diferença de temperatura entre o coletor solar e a piscina para acionar a
 bomba de circulação. Amedida que os coletores recebem energia, a temperatura no sensor T1
