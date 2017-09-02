@@ -25,7 +25,9 @@ bool b2 = 0; //bomba do filtro
 // em decimal seria a somatoria que daria um resultado interpretavel
 int estado = 0; //estado geral: 0 sem erros, 1 erro de sensor, outros erros
 
-float t1, t2;
+float t1, t2; // temperaturas dos sensores
+
+long int tmr1 = 0, tmr2 = 0; //temporizadores
 
 void setup(void)
 {
@@ -96,18 +98,46 @@ void Estados(char action) {
   }
 }
 
-void loop()
-{
-  Sensor('i'); // inicializa
-  Sensor('r'); // le
-
+void Bomba1() { // muda o estado da bomba 1 se necessário
   if (t1 - t2 > f02) {
     b1 = 1;
   } else if (t1 - t2 < f03) {
     b1 = 0;
   }
+}
 
-  Estados('p'); // Mostra dados no serial monitor
+bool Timer1(long int intervalo) {
+  if (millis() - tmr1 > intervalo) { //roda o timer
+    tmr1 = millis();
+    return true;
+  } else {
+    return false;
+  }
+}
 
-  delay(5000);
+bool Timer2(long int intervalo) {
+  if (millis() - tmr2 > intervalo) { //roda o timer
+    tmr2 = millis();
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void loop()
+{
+  if (Timer1(5000)) {
+    Sensor('i'); // inicializa
+    Sensor('r'); // le
+    Bomba1(); // muda estado da bomba1
+    Estados('p'); // Mostra dados no serial monitor
+  }
+
+  if (Timer2(15000)) {
+    Sensor('i');
+    Config('p');
+  }
+
+
+  //delay(5000);
 }
