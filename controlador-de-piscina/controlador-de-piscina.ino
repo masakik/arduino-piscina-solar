@@ -4,6 +4,8 @@
 
 // Porta do pino de sinal do DS18B20
 #define ONE_WIRE_BUS 3
+#define B1_PIN 4
+#define B2_PIN 5
 
 // Define uma instancia do oneWire para comunicacao com o sensor
 OneWire oneWire(ONE_WIRE_BUS);
@@ -32,6 +34,11 @@ long int tmr1 = 0, tmr2 = 0; //temporizadores
 void setup(void)
 {
   Serial.begin(9600);
+  pinMode(B1_PIN, OUTPUT);
+  digitalWrite(B1_PIN, !b1);
+  pinMode(B2_PIN, OUTPUT);
+  digitalWrite(B2_PIN, !b2);
+
   Sensor('i');
   Config('p');
 }
@@ -101,8 +108,10 @@ void Estados(char action) {
 void Bomba1() { // muda o estado da bomba 1 se necessário
   if (t1 - t2 > f02) {
     b1 = 1;
+    digitalWrite(B1_PIN, !b1);
   } else if (t1 - t2 < f03) {
     b1 = 0;
+    digitalWrite(B1_PIN, !b1);
   }
 }
 
@@ -135,7 +144,7 @@ void loop()
 
   if (Timer2(15000)) {
     Sensor('i');
-    Config('p');
+    Config('p'); // mostra configuracao
   }
 
 
