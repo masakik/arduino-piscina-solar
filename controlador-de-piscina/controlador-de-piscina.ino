@@ -4,15 +4,20 @@
 
 // Porta do pino de sinal do DS18B20
 #define ONE_WIRE_BUS 3
-#define B1_PIN 4
-#define B2_PIN 5
+#define B1_PIN 4 //pino do rele da bomba1
+#define B2_PIN 5 //pino do rele da bomba2
+
+#define LEDR 11
+#define LEDG 12
+#define LEDB 13
 
 // Define uma instancia do oneWire para comunicacao com o sensor
 OneWire oneWire(ONE_WIRE_BUS);
 
+// Indica onde procurar os sensores de temperatura
 DallasTemperature sensors(&oneWire);
 
-int v = 1;
+int v = 1; //versao
 
 // parametros ajustaveis
 int f02 = 8;  //diferencial t1-t2 para ligar a bomba
@@ -38,6 +43,14 @@ void setup(void)
   digitalWrite(B1_PIN, !b1);
   pinMode(B2_PIN, OUTPUT);
   digitalWrite(B2_PIN, !b2);
+
+  pinMode(LEDR, OUTPUT);
+  digitalWrite(LEDR, 1);
+  pinMode(LEDG, OUTPUT);
+  digitalWrite(LEDG, 1);
+  pinMode(LEDB, OUTPUT);
+  digitalWrite(LEDB, 1);
+  StatusLed();
 
   Sensor('i');
   Config('p');
@@ -67,28 +80,47 @@ void Config(char action) {
     Serial.print(",f03:");
     Serial.print(f03);
     Serial.println("}");
-
   } else if (action == 's') { // salva
-
+    // salva
   } else if (action == 'l') { // carrega
-
+    // carrega
+  } else if (action == 'r') { // reseta a configuracao para o padrao
+    // reset
   }
 }
 
 void Sensor(char action) {
   if (action == 'i') { // inicializa sensores
     sensors.begin();
-    estado = (sensors.getDeviceCount() != 2) ? 1 : 0;
-    sensors.getAddress(s1, 0);
-    sensors.getAddress(s2, 1);
-  } else if (action == 'r') { // le sensores
+    if (sensors.getDeviceCount() == 2) {
+      estado = 0;
+      sensors.getAddress(s1, 0);
+      sensors.getAddress(s2, 1);
+    } else if (sensors.getDeviceCount() == 1) {
+      estado = 1;
+      sensors.getAddress(s1, 0);
+    } else if (sensors.getDeviceCount() == 0) {
+      estado = 2;
+    }
+    StatusLed();
+    LogError();
+
+  } else if (action == 'r') { // le sensores somente se estiver OK
     sensors.requestTemperatures();
     t1 = sensors.getTempC(s1);
     t2 = sensors.getTempC(s2);
+
+//    if (t1 < -10) { // se a temperatura estver fora da faixa e porque houve erro
+//      estado = 3;
+//    }
+//    if (t2 < -10) {
+//      estado = 4;
+//    }
+
   }
 }
 
-void Estados(char action) {
+void Variaveis(char action) {
   if (action == 'p') { // imprime dados
     Serial.print("{");
     Serial.print("estado:");
@@ -105,18 +137,37 @@ void Estados(char action) {
   }
 }
 
-void Bomba1() { // muda o estado da bomba 1 se necessário
-  if (t1 - t2 > f02) {
-    b1 = 1;
-    digitalWrite(B1_PIN, !b1);
-  } else if (t1 - t2 < f03) {
+void Bomba1() { // muda o estado da bomba1 se necessário
+  if (estado == 0) {
+    if (t1 - t2 > f02) {
+      b1 = 1;
+      digitalWrite(B1_PIN, !b1);
+    } else if (t1 - t2 < f03) {
+      b1 = 0;
+      digitalWrite(B1_PIN, !b1);
+    }
+  } else {
     b1 = 0;
     digitalWrite(B1_PIN, !b1);
   }
 }
 
-bool Timer1(long int intervalo) {
-  if (millis() - tmr1 > intervalo) { //roda o timer
+void StatusLed() {
+  if (estado == 0) {
+    digitalWrite(LEDG, 0);
+    digitalWrite(LEDR, 1);
+  } else {
+    digitalWrite(LEDR, 0);
+    digitalWrite(LEDG, 1);
+  }
+}
+
+void LogError() {
+  // grava log de erros quando necessario
+}
+
+bool Timer1(unsigned int intervalo) {
+  if (millis() - tmr1 > intervalo * 1000) { //roda o timer
     tmr1 = millis();
     return true;
   } else {
@@ -124,8 +175,8 @@ bool Timer1(long int intervalo) {
   }
 }
 
-bool Timer2(long int intervalo) {
-  if (millis() - tmr2 > intervalo) { //roda o timer
+bool Timer2(unsigned int intervalo) {
+  if (millis() - tmr2 > intervalo * 1000) { //roda o timer
     tmr2 = millis();
     return true;
   } else {
@@ -135,18 +186,17 @@ bool Timer2(long int intervalo) {
 
 void loop()
 {
-  if (Timer1(5000)) {
+
+  if (Timer1(5)) {
     Sensor('i'); // inicializa
     Sensor('r'); // le
-    Bomba1(); // muda estado da bomba1
-    Estados('p'); // Mostra dados no serial monitor
+    Bomba1(); // muda estado da bomba1 se necessario
+    Variaveis('p'); // Mostra dados no serial monitor
   }
 
-  if (Timer2(15000)) {
+  if (Timer2(60)) {
     Sensor('i');
     Config('p'); // mostra configuracao
   }
 
-
-  //delay(5000);
 }
