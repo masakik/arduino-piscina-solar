@@ -7,6 +7,15 @@
 #define ONE_WIRE_BUS2 3
 #define B1_PIN 4 //pino do rele da bomba1
 #define B2_PIN 5 //pino do rele da bomba2
+#define B3_PIN 6 // rele3 opcional
+#define B4_PIN 7 // rele4 opcional
+
+#define sw_serial_rx_pin 8 //  Connect this pin to TX on the esp8266
+#define sw_serial_tx_pin 9 //  Connect this pin to RX on the esp8266
+#define esp8266_reset_pin 10 // Connect this pin to CH_PD on the esp8266, not reset. (let reset be unconnected)
+
+// relogio sda/scl
+// pino a4 e a5
 
 #define LEDR 11
 #define LEDG 12
@@ -15,8 +24,13 @@
 int v = 1; //versao
 
 // parametros ajustaveis
-unsigned int f02 = 4;  //diferencial t1-t2 para ligar a bomba
-unsigned int f03 = 3; //diferencial t1-t2 para desligar a bomba
+unsigned int f1 = 32; //temperatura desejada na piscina. Depois a bomba nao funciona
+unsigned int f2 = 4;  //diferencial t1-t2 para ligar a bomba
+unsigned int f3 = 3; //diferencial t1-t2 para desligar a bomba
+
+unsigned int f4 = 8; //temperatura em s1 para nao congelar. Histerese de 2 graus
+// opera se t1 < 15 graus. Entao o maximo seria f4 = 13 mas cuidado!!
+
 
 
 // ---------------------------------------------------------------
@@ -40,17 +54,16 @@ unsigned int b1_tempo = 0; // tempo acumulado de b1
 unsigned int b1_1 = 60; // protecao: tempo máximo que b1 pode ficar ligado.
 unsigned int b1_2 = 60; // protecao: tempo mínimmo que b1 fica desligado antes de ligar de novo
 
-// o estado serial bom usar um esquema de bits, onde cada bit setado seria um tipo de erro
+// o erro serial bom usar um esquema de bits, onde cada bit setado seria um tipo de erro
 // em decimal seria a somatoria que daria um resultado interpretavel
-int estado = 0; //estado geral: 0 sem erros, 1 erro de sensor, outros erros
+int erro = 0; //erro geral: 0 sem erros, 1 erro de sensor1, 2 erro sensor2, outros erros
+int info = 0; // flag de informacao: 4 - atingiu f4, 1 - atingiu f1, o que mais?
 int p = 0;
 
 float t1, t2; // temperaturas dos sensores t1-placa t2 piscina
 
 TimerM timer1;
-TimerM tmr_config;
-TimerM tmr_b1_1;
-TimerM tmr_b1_2;
+TimerM tmr_config, tmr_var;
 
 void setup(void)
 {
@@ -66,8 +79,21 @@ void loop()
   if (timer1.run(5)) { // tempo em segundos
     Sensor('i'); // inicializa
     Sensor('r'); // le
-    Bomba1(); // muda estado da bomba1 se necessario
+    StatusLed();
+    if (erro != 0) Bomba1('o'); // desliga a bomba se tiver erro
+    if (erro == 0 ) {
+      if (t2 < f1) {
+        Bomba1('d'); // modo diferencial se maximo nao atingido
+        info = 0;
+      } else {
+        info = 1;
+      }
+    }
+    if (erro == 0 && t1 < 15) Bomba1('a'); // anticongelamento
     Bomba1_tempo();
+  }
+
+  if (tmr_var.run(10)) {
     Variaveis('p'); // Mostra dados no serial monitor
   }
 
@@ -91,42 +117,34 @@ void setPins() {
   digitalWrite(LEDB, 1);
 }
 
-//void mostra_endereco_sensor(DeviceAddress deviceAddress)
-//{
-//  for (uint8_t i = 0; i < 8; i++) {
-//    // Adiciona zeros se necessário
-//    if (deviceAddress[i] < 16) Serial.print("0");
-//    Serial.print(deviceAddress[i], HEX);
-//  }
-//}
-
 
 void Sensor(char action) {
   if (action == 'i') { // inicializa sensores
     sensor1.begin();
     sensor2.begin();
     if (sensor1.getDeviceCount() == 1 && sensor2.getDeviceCount() == 1) {
-      estado = 0;
+      erro = 0;
       sensor1.getAddress(s1, 0);
       sensor2.getAddress(s2, 0);
-    } else {
-      estado = 1;
+    } else if (sensor1.getDeviceCount() == 0) {
+      erro = 1;
     }
-    StatusLed();
+    else if (sensor2.getDeviceCount() == 0) {
+      erro = 2;
+    }
     LogError();
 
   } else if (action == 'r') { // le sensores somente se estiver OK
-    if (estado == 0) {
+    if (erro == 0) {
       sensor1.requestTemperatures();
       sensor2.requestTemperatures();
       t1 = sensor1.getTempC(s1);
       t2 = sensor2.getTempC(s2);
       if (t1 < -10 || t2 < -10) { // se a temperatura estiver fora da faixa e porque houve erro
-        estado = 2;
+        erro = 3;
       }
     }
   }
-  StatusLed();
   LogError();
 }
 
@@ -135,8 +153,10 @@ void Config(char action) {
   if (action == 'p') { // imprime
     Serial.print("{");
     Serial.print("v:"); Serial.print(v);
-    Serial.print(",f02:"); Serial.print(f02);
-    Serial.print(",f03:"); Serial.print(f03);
+    Serial.print(",f1:"); Serial.print(f1);
+    Serial.print(",f2:"); Serial.print(f2);
+    Serial.print(",f3:"); Serial.print(f3);
+    Serial.print(",f4:"); Serial.print(f4);
     Serial.println("}");
   } else if (action == 's') { // salva
     // salva
@@ -150,9 +170,10 @@ void Config(char action) {
 void Variaveis(char action) {
   if (action == 'p') { // imprime dados
     Serial.print("{");
-    Serial.print("e:"); Serial.print(estado);
-    Serial.print(",t1:"); Serial.print(t1);
-    Serial.print(",t2:"); Serial.print(t2);
+    Serial.print("e:"); Serial.print(erro);
+    Serial.print(",i:"); Serial.print(info);
+    Serial.print(",t1:"); Serial.print(t1,1);
+    Serial.print(",t2:"); Serial.print(t2,1);
     Serial.print(",b1:"); Serial.print(b1);
     Serial.print(",b2:"); Serial.print(b2);
     Serial.print(",b1_tempo:"); Serial.print(b1_tempo);
@@ -160,23 +181,27 @@ void Variaveis(char action) {
   }
 }
 
-void Bomba1() { // muda o estado da bomba1 se necessário
-  if (estado == 0) {
-    if (t1 - t2 > f02) { // liga
+void Bomba1(char action) { // muda o estado da bomba1 se necessário
+  if (action == 'd') {// operacao diferencial
+    if (t1 - t2 > f2) { // liga
       b1 = 1; digitalWrite(B1_PIN, !b1); // !b1 pois o modulo de rele é invertido
     }
-    else if (t1 - t2 < f03) { // desliga
+    else if (t1 - t2 < f3) { // desliga
       b1 = 0; digitalWrite(B1_PIN, !b1); // !b1 pois o modulo de rele é invertido
     }
-
-  } else { // estado != 0 : desliga por problemas
-    b1 = 0; digitalWrite(B1_PIN, !b1); // !b1 pois o modulo de rele é invertido
   }
-//
-//  if (b1 == 1 && tmr_b1_1.run(b1_1)) {
-//    b1 = 0; digitalWrite(B1_PIN, !b1); // !b1 pois o modulo de rele é invertido
-//    p = 1;
-//  }
+  else if (action == 'a') { // operacao anticongelamento
+    if (t1 < f4) {
+      b1 = 1; digitalWrite(B1_PIN, !b1); // !b1 pois o modulo de rele é invertido
+      info = 4;
+    } else if (t1 > f4 + 2) {
+      b1 = 0; digitalWrite(B1_PIN, !b1); // !b1 pois o modulo de rele é invertido
+      info = 0;
+    }
+  }
+  else if (action == 'o') {
+    b1 = 0; digitalWrite(B1_PIN, !b1);
+  }
 }
 
 void Bomba1_tempo() {// acumula o tempo ligado
@@ -188,9 +213,8 @@ void Bomba1_tempo() {// acumula o tempo ligado
   }
 }
 
-
 void StatusLed() {
-  if (estado == 0) {
+  if (erro == 0) {
     digitalWrite(LEDG, 0);
     digitalWrite(LEDR, 1);
   } else {
