@@ -47,6 +47,12 @@ padrao: 40 (segundos)
 
 Erro (e): Monitora o estado dos sensores e ativa quando há problemas.
 
+0: Funcionamento normal
+
+* 1: Erro no sensor 1;
+
+2: Erro no sensor 2;
+
 Info (i): Informa a operação em andamento. 
 
 0: bomba1 desligada; 
