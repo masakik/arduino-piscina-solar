@@ -3,6 +3,12 @@ Controle de aquecedor solar para piscina.
 O objetivo desse sistema é implementar o controle da bomba de circulação de água nas placas solares a fim
 de aquecer a piscina de casa.
 
+Opera em modo diferencial com um sensor na placa de aquecimento e outro dentro da piscina. Dessa forma é minimizado o tempo de aquecimento da piscina. 
+
+Ao atingir a temperatura desejada o sistema impede o funcionamento da bomba.
+
+Possui sistema anticongelamento que faz a bomba circular água nas placas se sua temperatura ficar muito baixa.
+
 ## Módulos
 * Arduino
 * ESP8266
