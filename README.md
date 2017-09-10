@@ -50,17 +50,13 @@ Erro (e): Monitora o estado dos sensores e ativa quando há problemas.
 0: Funcionamento normal
 
 * 1: Erro no sensor 1;
-
-2: Erro no sensor 2;
+* 2: Erro no sensor 2;
 
 Info (i): Informa a operação em andamento. 
 
-0: bomba1 desligada; 
-
-1: bomba ligada no modo de aquecimento diferencial (operação normal)
-
-2: a piscina atingiu a temperatura desejada (F1);
-
-4: a bomba está ligada por atingir a temperatura de anticongelamento (F4)
+* 0: bomba1 desligada; 
+* 1: bomba ligada no modo de aquecimento diferencial (operação normal)
+* 2: a piscina atingiu a temperatura desejada (F1);
+* 4: a bomba está ligada por atingir a temperatura de anticongelamento (F4)
 
 
