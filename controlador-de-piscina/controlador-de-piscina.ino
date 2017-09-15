@@ -97,10 +97,11 @@ void loop()
         }
       } else { //se abaixo de congelamento
         Bomba1('l');
-        info = 5;
+        info = 4;
         tmr5.countdown("start", f5);
       }
     } else {
+      info = 0;
       Bomba1('o'); // desliga a bomba se tiver erro
     }
   }
@@ -123,7 +124,7 @@ void loop()
     }
   }
 
-  if (tmr4.run(10)) {
+  if (tmr4.run(30)) {
     Variaveis('p'); // Mostra dados no serial monitor
   }
 
@@ -209,9 +210,11 @@ void Variaveis(char action) {
 
 void Bomba1(char action) { // muda o estado da bomba1 se necessÃ¡rio
   if (action == 'o') {
+    if (b1 == 1) Variaveis('p');
     b1 = 0; digitalWrite(B1_PIN, !b1);
   }
   else if (action == 'l') {
+    if (b1 == 0) Variaveis('p');
     b1 = 1; digitalWrite(B1_PIN, !b1);
   }
 }
