@@ -39,6 +39,12 @@ bool TimerM::countdown(const char action[], unsigned long tempo) {
       return true;
     }
   } 
+  else if (strcmp(action,"restart")==0) // reinicia o countdown com o tempo fornecido
+  {
+    tmr = millis();
+    _tempo = tempo;
+    return true;
+  }
   else if (strcmp(action,"finish")==0) // se terminou retorna true
   {
     if (tmr > 0 && millis() - tmr > _tempo * 1000) {
